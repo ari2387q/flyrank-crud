@@ -46,4 +46,4 @@ content-type: application/json
 Interactive API documentation is automatically generated and available at:
 `http://localhost:8000/docs`
 
-*(Place screenshot here as per Stage 5 requirements)*
+![Swagger UI](swagger/flyrank-crud.png)
