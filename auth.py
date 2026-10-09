@@ -20,7 +20,7 @@ auth_app = FastAPI(
 
 security = HTTPBearer()
 
-# ── Stage 3: Dependency - verify bearer token via supabase.auth.get_user() ──────────────────────────────────────────
+# ── Stage 4: Reusable dependency (replaces per-route token logic) - verify bearer token via supabase.auth.get_user() ──────────────────────────────────────────
 def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
     token = credentials.credentials
     try:
