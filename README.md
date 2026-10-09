@@ -101,7 +101,7 @@ FastAPI automatically generates interactive Swagger documentation at `http://loc
 - Click the green **Authorize** button at the top right, paste your `access_token`, and click **Authorize**.
 - You can now test `/protected/profile` and `/protected/dashboard` directly in your browser.
 
-![Swagger UI Auth](swagger/auth-swagger.png)
+![Swagger UI Auth](swagger/auth.png)
 
 ---
 

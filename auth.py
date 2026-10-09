@@ -77,7 +77,8 @@ def login(payload: Dict[str, Any]):
         }
     except HTTPException:
         raise
-    except Exception:
+    except Exception as e:
+        print("LOGIN ERROR DETAIL:", type(e), e)
         raise HTTPException(status_code=401, detail={"error": "Invalid login credentials"})
 
 @auth_app.post("/auth/logout", status_code=status.HTTP_204_NO_CONTENT, summary="Log Out", tags=["Auth"])
