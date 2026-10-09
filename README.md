@@ -40,5 +40,4 @@ SELECT * FROM tasks WHERE done = 1;
 ```
 
 ## Database Viewer
-
-*(Place screenshot of DB Browser for SQLite here as per Stage 5 requirements)*
+![Database Viewer](db-viewer.png)
