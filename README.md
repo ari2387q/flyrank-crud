@@ -40,4 +40,4 @@ SELECT * FROM tasks WHERE done = 1;
 ```
 
 ## Database Viewer
-![Database Viewer](db-viewer.png)
+![Database Viewer](swagger/db.viewer.png)
