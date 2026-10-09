@@ -81,10 +81,51 @@ def create_task(payload: Dict[str, Any]):
     
     return {"id": new_id, "title": str(title).strip(), "done": False}
 
-@app.put("/tasks/{task_id}")
+@app.put("/tasks/{task_id}", summary="Update a Task")
 def update_task(task_id: int, payload: Dict[str, Any]):
-    return {}
+    if not payload:
+        raise HTTPException(status_code=400, detail={"error": "Invalid body"})
 
-@app.delete("/tasks/{task_id}", status_code=status.HTTP_204_NO_CONTENT)
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM tasks WHERE id = ?", (task_id,))
+    row = cursor.fetchone()
+    
+    if row is None:
+        conn.close()
+        raise HTTPException(status_code=404, detail={"error": "Task not found"})
+        
+    new_title = row["title"]
+    new_done = row["done"]
+
+    if "title" in payload:
+        if not payload["title"] or not str(payload["title"]).strip():
+            conn.close()
+            raise HTTPException(status_code=400, detail={"error": "Title cannot be empty"})
+        new_title = str(payload["title"]).strip()
+        
+    if "done" in payload:
+        new_done = 1 if payload["done"] else 0
+        
+    cursor.execute(
+        "UPDATE tasks SET title = ?, done = ? WHERE id = ?", 
+        (new_title, new_done, task_id)
+    )
+    conn.commit()
+    conn.close()
+    
+    return {"id": task_id, "title": new_title, "done": bool(new_done)}
+
+@app.delete("/tasks/{task_id}", status_code=status.HTTP_204_NO_CONTENT, summary="Delete a Task")
 def delete_task(task_id: int):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT id FROM tasks WHERE id = ?", (task_id,))
+    if cursor.fetchone() is None:
+        conn.close()
+        raise HTTPException(status_code=404, detail={"error": "Task not found"})
+        
+    cursor.execute("DELETE FROM tasks WHERE id = ?", (task_id,))
+    conn.commit()
+    conn.close()
     return
