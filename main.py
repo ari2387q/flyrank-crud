@@ -66,9 +66,20 @@ def get_task(task_id: int):
         raise HTTPException(status_code=404, detail={"error": "Task not found"})
     return {"id": row["id"], "title": row["title"], "done": bool(row["done"])}
 
-@app.post("/tasks", status_code=status.HTTP_201_CREATED)
+@app.post("/tasks", status_code=status.HTTP_201_CREATED, summary="Create a Task")
 def create_task(payload: Dict[str, Any]):
-    return {}
+    title = payload.get("title")
+    if not title or not str(title).strip():
+        raise HTTPException(status_code=400, detail={"error": "Title is missing or empty"})
+    
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("INSERT INTO tasks (title, done) VALUES (?, ?)", (str(title).strip(), 0))
+    conn.commit()
+    new_id = cursor.lastrowid
+    conn.close()
+    
+    return {"id": new_id, "title": str(title).strip(), "done": False}
 
 @app.put("/tasks/{task_id}")
 def update_task(task_id: int, payload: Dict[str, Any]):
