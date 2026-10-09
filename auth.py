@@ -37,7 +37,7 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
             detail={"error": "Invalid or expired token"}
         )
 
-# ── Public route ──────────────────────────────────────────────────────────────
+# ── Stage 2: Public route (no auth) ──────────────────────────────────────────────────────────────
 @auth_app.get("/public/info", summary="Public Info", tags=["Public"])
 def public_info():
     return {"message": "Welcome stranger! This info is public."}
@@ -87,7 +87,7 @@ def logout(current_user=Depends(get_current_user)):
         pass
     return
 
-# ── Protected routes ──────────────────────────────────────────────────────────
+# ── Stage 2 & 3: Protected routes (bearer token required) ──────────────────────────────────────────────────────────
 @auth_app.get("/protected/profile", summary="Get Profile (Protected)", tags=["Protected"])
 def get_profile(current_user=Depends(get_current_user)):
     return {
