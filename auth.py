@@ -42,7 +42,7 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
 def public_info():
     return {"message": "Welcome stranger! This info is public."}
 
-# ── Auth routes ───────────────────────────────────────────────────────────────
+# ── Stage 1: Auth routes (signup + login) ───────────────────────────────────────────────────────────────
 @auth_app.post("/auth/signup", status_code=status.HTTP_201_CREATED, summary="Sign Up", tags=["Auth"])
 def signup(payload: Dict[str, Any]):
     email = payload.get("email")
