@@ -18,6 +18,7 @@ auth_app = FastAPI(
     description="Secure authentication API using Supabase Auth and JWT tokens."
 )
 
+# Stage 5: HTTPBearer makes the lock icon appear in Swagger UI
 security = HTTPBearer()
 
 # ── Stage 4: Reusable dependency (replaces per-route token logic) - verify bearer token via supabase.auth.get_user() ──────────────────────────────────────────
