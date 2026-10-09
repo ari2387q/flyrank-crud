@@ -1,7 +1,6 @@
 from fastapi import FastAPI, HTTPException, status
 from typing import Dict, Any
 import sqlite3
-import os
 
 app = FastAPI(
     title="Task API",
@@ -38,9 +37,6 @@ def init_db():
 
 init_db()
 
-# Memory list is still here for unmigrated endpoints temporarily
-tasks = [] 
-
 @app.get("/", summary="API Root")
 def read_root():
     return {"name": "Task API", "version": "1.0", "endpoints": ["/tasks"]}
@@ -49,13 +45,26 @@ def read_root():
 def health_check():
     return {"status": "ok"}
 
-@app.get("/tasks")
+@app.get("/tasks", summary="List Tasks")
 def get_tasks():
-    return tasks
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM tasks")
+    rows = cursor.fetchall()
+    conn.close()
+    return [{"id": row["id"], "title": row["title"], "done": bool(row["done"])} for row in rows]
 
-@app.get("/tasks/{task_id}")
+@app.get("/tasks/{task_id}", summary="Get a Task")
 def get_task(task_id: int):
-    return {}
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM tasks WHERE id = ?", (task_id,))
+    row = cursor.fetchone()
+    conn.close()
+    
+    if row is None:
+        raise HTTPException(status_code=404, detail={"error": "Task not found"})
+    return {"id": row["id"], "title": row["title"], "done": bool(row["done"])}
 
 @app.post("/tasks", status_code=status.HTTP_201_CREATED)
 def create_task(payload: Dict[str, Any]):
