@@ -1,111 +1,111 @@
-# FlyRank CRUD API — PostgreSQL + Docker
+# FlyRank Secure Auth API — Supabase + FastAPI + JWT
 
-A simple CRUD API built with **Python + FastAPI**, backed by **PostgreSQL** running in **Docker**.
-
-The API endpoints are identical to the original SQLite version. Only the storage layer changed — this is the architecture proving itself.
+A secure authentication API built with **Python + FastAPI** and **Supabase Auth**, using **JWT Bearer Tokens** to protect routes.
 
 ---
 
-## How to Run (one command)
+## What this Project is
 
-```bash
-docker compose up
-```
-
-The server starts at `http://localhost:8000`.
-The Swagger UI is at `http://localhost:8000/docs`.
-
-> The database and table are created automatically on the first run.
+In previous assignments, the API was unprotected. This project secures the API by integrating **Supabase as the Identity Provider (IdP)**. It implements user registration (Sign Up), authentication (Log In), session termination (Log Out), public endpoints, and protected endpoints guarded by JWT verification via reusable FastAPI dependencies.
 
 ---
 
-## Endpoints
+## Setup & How to Run
 
-| CRUD operation | HTTP method | Endpoint | Meaning |
-|---|---|---|---|
-| Read (Meta) | GET | `/` | API Root |
-| Read (Meta) | GET | `/health` | Health Check |
-| Read | GET | `/tasks` | List all tasks |
-| Read | GET | `/tasks/{id}` | Get a specific task by ID |
-| Create | POST | `/tasks` | Add a new task |
-| Update | PUT | `/tasks/{id}` | Update an existing task |
-| Delete | DELETE | `/tasks/{id}` | Remove a task |
-
----
-
-## Environment Variables
-
-The database connection string is stored in `.env` (gitignored). A safe example is committed as `.env.example`:
-
-```env
-DATABASE_URL=postgresql://postgres:postgres@db:5432/tasksdb
-```
-
-Copy it to get started:
+### 1. Configure Environment Variables
+Copy `.env.example` to `.env`:
 ```bash
 cp .env.example .env
 ```
-
----
-
-## Architecture
-
-```
-Client → FastAPI (app container) → PostgreSQL (db container)
+Open `.env` and fill in your Supabase credentials:
+```env
+SUPABASE_URL=your_supabase_project_url
+SUPABASE_KEY=your_supabase_anon_key
 ```
 
-The service and routes are **completely unchanged** from the SQLite version. Only `get_db_connection()` and the SQL queries were updated to use `psycopg2` and Postgres syntax (`%s` placeholders, `SERIAL`, `RETURNING`).
-
----
-
-## Proving Persistence
-
-To verify data survives a full restart:
-
+### 2. Install Dependencies
 ```bash
-# 1. Start the stack
-docker compose up
-
-# 2. Create a task
-curl -X POST http://localhost:8000/tasks -H "Content-Type: application/json" -d '{"title":"Survives restart"}'
-
-# 3. Stop everything (Ctrl+C), then restart
-docker compose down
-docker compose up
-
-# 4. Check the task is still there
-curl http://localhost:8000/tasks
+source venv/bin/activate
+pip install -r requirements.txt
 ```
 
-The task will still exist because Postgres data is stored in a named Docker volume (`postgres_data`), not inside the container.
-
----
-
-## Example curl Request
-
+### 3. Start the Server (Single Terminal Command)
 ```bash
-curl -i http://localhost:8000/tasks/1
+python run_auth.py
 ```
-
-Output:
-```http
-HTTP/1.1 200 OK
-content-type: application/json
-
-{"id":1,"title":"Buy milk","done":false}
-```
+- Server starts on `http://localhost:8000`
+- Interactive Swagger UI documentation is available at `http://localhost:8000/docs`
 
 ---
 
-## Swagger UI
+## API Reference
 
-![Swagger UI](swagger/flyrank-crud.png)
+| HTTP Method | Endpoint | Requires Auth? | Description |
+|---|---|---|---|
+| GET | `/public/info` | ❌ No | Public welcome message |
+| POST | `/auth/signup` | ❌ No | Register a new user account |
+| POST | `/auth/login` | ❌ No | Authenticate user & return JWT access token |
+| POST | `/auth/logout` | ✅ Bearer Token | Terminate session |
+| GET | `/protected/profile` | ✅ Bearer Token | View authenticated user profile data |
+| GET | `/protected/dashboard` | ✅ Bearer Token | View private user dashboard |
 
 ---
 
-## Database Viewer
+## HTTP Status Codes
 
-![Database Viewer](swagger/db.viewer.png)
+| Code | Name | Description |
+|---|---|---|
+| `200` | OK | Successful login, profile read, or dashboard access |
+| `201` | Created | Successfully registered a new user |
+| `204` | No Content | Successfully logged out |
+| `400` | Bad Request | Missing email or password |
+| `401` | Unauthorized | Missing, invalid, or expired Bearer token |
 
-## containerizing
-![containerizing](swagger/dockerize.png)
+---
+
+## Testing the API
+
+### 1. Sign Up (Create account)
+```bash
+curl -i -X POST http://localhost:8000/auth/signup \
+  -H "Content-Type: application/json" \
+  -d '{"email":"student@example.com","password":"password123"}'
+```
+
+### 2. Log In (Get your JWT access token)
+```bash
+curl -i -X POST http://localhost:8000/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"student@example.com","password":"password123"}'
+```
+*Copy the `access_token` from the JSON response.*
+
+### 3. Access Protected Route with Token
+```bash
+curl -i http://localhost:8000/protected/profile \
+  -H "Authorization: Bearer <PASTE_YOUR_ACCESS_TOKEN_HERE>"
+```
+
+### 4. Test Token Rejection (Without Token or Invalid Token)
+```bash
+curl -i http://localhost:8000/protected/profile
+```
+*Returns `401 Unauthorized` with `{"detail":{"error":"Invalid or expired token"}}`.*
+
+---
+
+## Swagger UI & Bearer Auth
+
+FastAPI automatically generates interactive Swagger documentation at `http://localhost:8000/docs`.
+- Protected routes display a 🔒 **lock icon**.
+- Click the green **Authorize** button at the top right, paste your `access_token`, and click **Authorize**.
+- You can now test `/protected/profile` and `/protected/dashboard` directly in your browser.
+
+![Swagger UI Auth](swagger/auth-swagger.png)
+
+---
+
+## Security Best Practices Followed
+- **No secrets in version control**: `.env` is listed in `.gitignore`. Only `.env.example` with placeholders is committed.
+- **Delegated Cryptography**: Authentication and password management are handled by Supabase Auth (IdP), avoiding custom unsafe password hashing.
+- **Reusable Security Dependency**: Route protection is abstracted into FastAPI's `get_current_user` dependency utilizing `HTTPBearer`.
